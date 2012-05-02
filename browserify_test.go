@@ -2,13 +2,24 @@ package browserify_test
 
 import (
 	"github.com/nshah/go.browserify"
+	"go/build"
 	"strings"
 	"testing"
 )
 
+const example = "github.com/nshah/go.browserify/example"
+
+func exampleDir(t *testing.T) string {
+	pkg, err := build.Import(example, "", build.FindOnly)
+	if err != nil {
+		t.Fatalf("Failed to find example npm module: %s", err)
+	}
+	return pkg.Dir
+}
+
 func TestContents(t *testing.T) {
 	s := browserify.Script{
-		Dir:   "example",
+		Dir:   exampleDir(t),
 		Entry: "lib/example.js",
 	}
 	b, err := s.Content()
