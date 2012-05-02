@@ -1,17 +1,19 @@
+// Package browserify provides a wrapper around the CLI.
 package browserify
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"flag"
+	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"encoding/json"
-	"net/http"
 )
 
 const defaultBinary = "browserify"
+
 var browserifyPathOverride = flag.String(
 	"browserify.path", "", "The path to the browserify command.")
 
@@ -23,22 +25,22 @@ type Plugin map[string]interface{}
 
 // Define a script just as you would with the browserify CLI.
 type Script struct {
-	Dir string // the working directory
-	Require string
-	Entry string
-	Ignore string
-	Alias Alias
-	Debug bool
-	Plugin Plugin
+	Dir         string // the working directory
+	Require     string
+	Entry       string
+	Ignore      string
+	Alias       Alias
+	Debug       bool
+	Plugin      Plugin
 	OmitPrelude bool
-	Watch bool
+	Watch       bool
 }
 
 // Command line arguments for the configured Alias.
 func (a Alias) Args() ([]string, error) {
 	args := make([]string, 0)
 	for key, val := range a {
-		args = append(args, "--alias", key + ":" + val)
+		args = append(args, "--alias", key+":"+val)
 	}
 	return args, nil
 }
@@ -53,7 +55,7 @@ func (p Plugin) Args() ([]string, error) {
 				"Failed json.Marshal for argument %v for plugin %s with eror %s.",
 				key, val, err)
 		}
-		args = append(args, "--alias", key + ":" + string(val))
+		args = append(args, "--alias", key+":"+string(val))
 	}
 	return args, nil
 }
@@ -128,7 +130,7 @@ func (s *Script) Content() ([]byte, error) {
 	cmd := &exec.Cmd{
 		Path: browserify,
 		Args: args,
-		Dir: s.Dir,
+		Dir:  s.Dir,
 	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {

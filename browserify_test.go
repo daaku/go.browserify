@@ -6,8 +6,8 @@ import (
 )
 
 func TestContents(t *testing.T) {
- 	s := browserify.Script{
-		Dir: "example",
+	s := browserify.Script{
+		Dir:   "example",
 		Entry: "lib/example.js",
 	}
 	content, err := s.Content()
