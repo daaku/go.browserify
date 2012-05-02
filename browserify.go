@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const defaultBinary = "browserify"
@@ -61,7 +62,7 @@ func (p Plugin) Args() ([]string, error) {
 }
 
 // Try harder to look for browserify.
-func browserifyPath() (string, error) {
+func (s *Script) browserifyPath() (string, error) {
 	if *browserifyPathOverride != "" {
 		return *browserifyPathOverride, nil
 	}
@@ -69,13 +70,18 @@ func browserifyPath() (string, error) {
 	// prefer the one in `npm bin` if one exists
 	npmPath, err := exec.LookPath("npm")
 	if err == nil && npmPath != "" {
-		npmBin, err := exec.Command(npmPath, "bin").CombinedOutput()
+		cmd := &exec.Cmd{
+			Path: npmPath,
+			Args: []string{"npm", "bin"},
+			Dir:  s.Dir,
+		}
+		npmBin, err := cmd.CombinedOutput()
 		if err != nil {
 			return "", fmt.Errorf("Failed to run npm bin: %s", err)
 		}
-		localPath := filepath.Join(string(npmBin), defaultBinary)
-		_, err = os.Stat(localPath)
-		if os.IsExist(err) {
+		localPath := filepath.Join(strings.TrimSpace(string(npmBin)), defaultBinary)
+		st, err := os.Stat(localPath)
+		if !os.IsNotExist(err) && st != nil {
 			return localPath, nil
 		}
 	}
@@ -119,7 +125,7 @@ func (s *Script) Args() ([]string, error) {
 
 // Get the contents of this script.
 func (s *Script) Content() ([]byte, error) {
-	browserify, err := browserifyPath()
+	browserify, err := s.browserifyPath()
 	if err != nil {
 		return nil, err
 	}

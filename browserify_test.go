@@ -13,7 +13,7 @@ func TestContents(t *testing.T) {
 	}
 	b, err := s.Content()
 	if err != nil {
-		t.Fatalf("Error getting content %s", err)
+		t.Fatalf("Error getting content: %s", err)
 	}
 	content := string(b)
 	if !strings.Contains(content, "dotaccess") {
