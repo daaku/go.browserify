@@ -34,11 +34,10 @@ type Script struct {
 	Debug       bool
 	Plugin      Plugin
 	OmitPrelude bool
-	Watch       bool
 }
 
 // Command line arguments for the configured Alias.
-func (a Alias) Args() ([]string, error) {
+func (a Alias) args() ([]string, error) {
 	args := make([]string, 0)
 	for key, val := range a {
 		args = append(args, "--alias", key+":"+val)
@@ -47,7 +46,7 @@ func (a Alias) Args() ([]string, error) {
 }
 
 // Command line arguments for the configured Plugin.
-func (p Plugin) Args() ([]string, error) {
+func (p Plugin) args() ([]string, error) {
 	args := make([]string, 0)
 	for key, i := range p {
 		val, err := json.Marshal(i)
@@ -96,7 +95,7 @@ func (s *Script) browserifyPath() (string, error) {
 }
 
 // Command line arguments for the browserify command to generate script content.
-func (s *Script) Args() ([]string, error) {
+func (s *Script) args() ([]string, error) {
 	args := make([]string, 0)
 	if s.Require != "" {
 		args = append(args, "--require", s.Require)
@@ -107,18 +106,21 @@ func (s *Script) Args() ([]string, error) {
 	if s.Ignore != "" {
 		args = append(args, "--ignore", s.Ignore)
 	}
-	aliasArgs, err := s.Alias.Args()
+	aliasArgs, err := s.Alias.args()
 	if err != nil {
 		return nil, err
 	}
 	args = append(args, aliasArgs...)
-	pluginArgs, err := s.Plugin.Args()
+	pluginArgs, err := s.Plugin.args()
 	if err != nil {
 		return nil, err
 	}
 	args = append(args, pluginArgs...)
 	if s.OmitPrelude {
 		args = append(args, "--prelude", "false")
+	}
+	if s.Debug {
+		args = append(args, "--debug")
 	}
 	return args, nil
 }
@@ -129,7 +131,7 @@ func (s *Script) Content() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	args, err := s.Args()
+	args, err := s.args()
 	if err != nil {
 		return nil, err
 	}
