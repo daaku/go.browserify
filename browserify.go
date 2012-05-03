@@ -2,6 +2,7 @@
 package browserify
 
 import (
+	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -9,14 +10,19 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 )
 
+const Path = "/browserify/"
 const defaultBinary = "browserify"
 
 var browserifyPathOverride = flag.String(
 	"browserify.path", "", "The path to the browserify command.")
+
+// Internal content cache.
+var cache map[string][]byte
 
 // Alias module names.
 type Alias map[string]string
@@ -34,6 +40,11 @@ type Script struct {
 	Debug       bool
 	Plugin      Plugin
 	OmitPrelude bool
+	url         string
+}
+
+func init() {
+	cache = make(map[string][]byte)
 }
 
 // Command line arguments for the configured Alias.
@@ -149,11 +160,44 @@ func (s *Script) Content() ([]byte, error) {
 	return out, nil
 }
 
+// Get the URL suffix for easier debuggibility.
+func (s *Script) suffix() string {
+	if s.Entry != "" {
+		return s.Entry
+	}
+	return s.Require
+}
+
 // Get a a content-addressable URL for this script.
-func (s *Script) URL() string {
-	return ""
+func (s *Script) URL() (string, error) {
+	if s.url == "" {
+		h := md5.New()
+		content, err := s.Content()
+		if err != nil {
+			return "", err
+		}
+		_, err = h.Write(content)
+		if err != nil {
+			return "", err
+		}
+		hex := fmt.Sprintf("%x", h.Sum(nil))
+		s.url = path.Join(Path, hex[:10], s.suffix())
+		cache[s.url] = content
+	}
+	return s.url, nil
 }
 
 // Serves the static scripts.
 func Handle(w http.ResponseWriter, r *http.Request) {
+	const maxAge = 31536000 // 1 year
+	header := w.Header()
+	header.Set("Content-Type", "application/x-javascript; charset=utf-8")
+	header.Set("X-Content-Type-Options", "nosniff")
+	content, ok := cache[r.URL.Path]
+	if !ok {
+		w.Write([]byte("alert('browserify resource not found!')"))
+		return
+	}
+	header.Set("Cache-Control", fmt.Sprintf("public, max-age=%d", maxAge))
+	w.Write(content)
 }

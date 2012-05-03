@@ -3,25 +3,27 @@ package browserify_test
 import (
 	"github.com/nshah/go.browserify"
 	"go/build"
+	"log"
 	"strings"
 	"testing"
 )
 
 const example = "github.com/nshah/go.browserify/example"
 
-func exampleDir(t *testing.T) string {
+var s = &browserify.Script{
+	Dir:   exampleDir(),
+	Entry: "lib/example.js",
+}
+
+func exampleDir() string {
 	pkg, err := build.Import(example, "", build.FindOnly)
 	if err != nil {
-		t.Fatalf("Failed to find example npm module: %s", err)
+		log.Fatalf("Failed to find example npm module: %s", err)
 	}
 	return pkg.Dir
 }
 
 func TestContents(t *testing.T) {
-	s := browserify.Script{
-		Dir:   exampleDir(t),
-		Entry: "lib/example.js",
-	}
 	b, err := s.Content()
 	if err != nil {
 		t.Fatalf("Error getting content: %s", err)
@@ -32,5 +34,16 @@ func TestContents(t *testing.T) {
 	}
 	if !strings.Contains(content, "42 + ans") {
 		t.Fatalf("Was expecting example content but did not find it:\n%s", content)
+	}
+}
+
+func TestURL(t *testing.T) {
+	const expected = "/browserify/d5b99e1aba/lib/example.js"
+	u, err := s.URL()
+	if err != nil {
+		t.Fatalf("Error getting URL: %s", err)
+	}
+	if u != expected {
+		t.Fatal("Did not find expected URL %s instead found %s", expected, u)
 	}
 }
