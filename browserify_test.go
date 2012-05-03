@@ -44,6 +44,6 @@ func TestURL(t *testing.T) {
 		t.Fatalf("Error getting URL: %s", err)
 	}
 	if u != expected {
-		t.Fatal("Did not find expected URL %s instead found %s", expected, u)
+		t.Fatalf("Did not find expected URL %s instead found %s", expected, u)
 	}
 }
