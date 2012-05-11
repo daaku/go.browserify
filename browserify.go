@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -40,6 +41,7 @@ type Script struct {
 	Debug       bool
 	Plugin      Plugin
 	OmitPrelude bool
+	Override    string
 	url         string
 }
 
@@ -138,26 +140,29 @@ func (s *Script) args() ([]string, error) {
 
 // Get the contents of this script.
 func (s *Script) Content() ([]byte, error) {
-	browserify, err := s.browserifyPath()
-	if err != nil {
-		return nil, err
+	if s.Override == "" {
+		browserify, err := s.browserifyPath()
+		if err != nil {
+			return nil, err
+		}
+		args, err := s.args()
+		if err != nil {
+			return nil, err
+		}
+		cmd := &exec.Cmd{
+			Path: browserify,
+			Args: args,
+			Dir:  s.Dir,
+		}
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return nil, fmt.Errorf(
+				"Failed to execute command %v with error %s and output %s",
+				args, err, string(out))
+		}
+		return out, nil
 	}
-	args, err := s.args()
-	if err != nil {
-		return nil, err
-	}
-	cmd := &exec.Cmd{
-		Path: browserify,
-		Args: args,
-		Dir:  s.Dir,
-	}
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf(
-			"Failed to execute command %v with error %s and output %s",
-			args, err, string(out))
-	}
-	return out, nil
+	return ioutil.ReadFile(s.Override)
 }
 
 // Get the URL suffix for easier debuggibility.
