@@ -201,10 +201,12 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	header.Set("X-Content-Type-Options", "nosniff")
 	content, ok := cache[r.URL.Path]
 	if !ok {
+		w.WriteHeader(404)
 		w.Write([]byte("alert('browserify resource not found!')"))
 		return
 	}
 	header.Set(
-		"Cache-Control", fmt.Sprintf("public, max-age=%d", int(cacheMaxAge.Seconds())))
+		"Cache-Control",
+		fmt.Sprintf("public, max-age=%d", int(cacheMaxAge.Seconds())))
 	w.Write(content)
 }
