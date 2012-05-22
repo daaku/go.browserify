@@ -14,6 +14,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const Path = "/browserify/"
@@ -22,6 +23,10 @@ const defaultBinary = "browserify"
 var (
 	browserifyPathOverride = flag.String(
 		"browserify.path", "", "The path to the browserify command.")
+	cacheMaxAge = flag.Duration(
+		"browserify.max-age",
+		time.Hour*87658,
+		"Max age to use in the cache headers.")
 	// Internal content cache.
 	cache = make(map[string][]byte)
 )
@@ -191,7 +196,6 @@ func (s *Script) URL() (string, error) {
 
 // Serves the static scripts.
 func Handle(w http.ResponseWriter, r *http.Request) {
-	const maxAge = 31536000 // 1 year
 	header := w.Header()
 	header.Set("Content-Type", "application/x-javascript; charset=utf-8")
 	header.Set("X-Content-Type-Options", "nosniff")
@@ -200,6 +204,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("alert('browserify resource not found!')"))
 		return
 	}
-	header.Set("Cache-Control", fmt.Sprintf("public, max-age=%d", maxAge))
+	header.Set(
+		"Cache-Control", fmt.Sprintf("public, max-age=%d", int(cacheMaxAge.Seconds())))
 	w.Write(content)
 }
