@@ -19,11 +19,12 @@ import (
 const Path = "/browserify/"
 const defaultBinary = "browserify"
 
-var browserifyPathOverride = flag.String(
-	"browserify.path", "", "The path to the browserify command.")
-
-// Internal content cache.
-var cache map[string][]byte
+var (
+	browserifyPathOverride = flag.String(
+		"browserify.path", "", "The path to the browserify command.")
+	// Internal content cache.
+	cache = make(map[string][]byte)
+)
 
 // Alias module names.
 type Alias map[string]string
@@ -43,10 +44,6 @@ type Script struct {
 	OmitPrelude bool
 	Override    string
 	url         string
-}
-
-func init() {
-	cache = make(map[string][]byte)
 }
 
 // Command line arguments for the configured Alias.
