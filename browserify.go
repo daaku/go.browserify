@@ -42,6 +42,7 @@ type Script struct {
 	Dir         string // the working directory
 	Require     string
 	Entry       string
+	Exports     string
 	Ignore      string
 	Alias       Alias
 	Debug       bool
@@ -118,6 +119,9 @@ func (s *Script) args() ([]string, error) {
 	if s.Entry != "" {
 		args = append(args, "--entry", s.Entry)
 	}
+	if s.Exports != "" {
+		args = append(args, "--exports", s.Exports)
+	}
 	if s.Ignore != "" {
 		args = append(args, "--ignore", s.Ignore)
 	}
@@ -156,7 +160,7 @@ func (s *Script) Content() ([]byte, error) {
 			Args: args,
 			Dir:  s.Dir,
 		}
-		out, err := cmd.CombinedOutput()
+		out, err := cmd.Output()
 		if err != nil {
 			return nil, fmt.Errorf(
 				"Failed to execute command %v with error %s and output %s",
