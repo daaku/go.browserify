@@ -1,14 +1,14 @@
 package browserify_test
 
 import (
-	"github.com/nshah/go.browserify"
+	"github.com/daaku/go.browserify"
 	"go/build"
 	"log"
 	"strings"
 	"testing"
 )
 
-const example = "github.com/nshah/go.browserify/example"
+const example = "github.com/daaku/go.browserify/example"
 
 var s = &browserify.Script{
 	Dir:   exampleDir(),
